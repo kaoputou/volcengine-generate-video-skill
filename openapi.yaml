@@ -1,0 +1,257 @@
+openapi: 3.1.0
+info:
+  title: Seedance 视频生成
+  description: 火山引擎方舟 Seedance 视频生成 API，支持文生视频、图生视频、任务查询
+  version: 1.0.0
+
+servers:
+  - url: https://ark.cn-beijing.volces.com/api/v3
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    TextContent:
+      type: object
+      required: [type, text]
+      properties:
+        type:
+          type: string
+          enum: [text]
+        text:
+          type: string
+          description: 视频内容提示词
+
+    ImageContent:
+      type: object
+      required: [type, image_url, role]
+      properties:
+        type:
+          type: string
+          enum: [image_url]
+        image_url:
+          type: object
+          required: [url]
+          properties:
+            url:
+              type: string
+              description: 图片 URL 或 Base64 data URI
+        role:
+          type: string
+          enum: [first_frame, last_frame, reference_image]
+          description: first_frame=首帧，last_frame=尾帧，reference_image=参考图
+
+    CreateTaskRequest:
+      type: object
+      required: [model, content]
+      properties:
+        model:
+          type: string
+          description: 模型ID
+          enum:
+            - doubao-seedance-2-0-260128
+            - doubao-seedance-2-0-fast-250228
+            - doubao-seedance-1-5-pro-251215
+            - doubao-seedance-1-0-pro-250528
+            - doubao-seedance-1-0-lite-t2v
+            - doubao-seedance-1-0-lite-i2v
+          default: doubao-seedance-2-0-260128
+        content:
+          type: array
+          description: 输入内容列表，可组合文本和图片
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/TextContent'
+              - $ref: '#/components/schemas/ImageContent'
+        ratio:
+          type: string
+          description: 宽高比
+          enum: [16:9, 9:16, 1:1, 4:3, adaptive]
+          default: "16:9"
+        resolution:
+          type: string
+          description: 分辨率
+          enum: [480p, 720p, 1080p]
+          default: 720p
+        duration:
+          type: integer
+          description: 时长秒数，-1 由模型自动决定（seedance 2.0: 4-15s，其他: 2-12s）
+          default: 5
+        generate_audio:
+          type: boolean
+          description: 是否生成同步音频（仅 2.0 / 1.5pro 支持）
+          default: true
+        seed:
+          type: integer
+          description: 随机种子，-1 为随机
+          default: -1
+        watermark:
+          type: boolean
+          description: 是否加水印
+          default: false
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, succeeded, failed, expired, cancelled]
+        model:
+          type: string
+        created_at:
+          type: integer
+        content:
+          type: object
+          properties:
+            video_url:
+              type: string
+              description: 视频下载链接（24小时有效）
+            last_frame_url:
+              type: string
+            duration:
+              type: number
+            resolution:
+              type: string
+            ratio:
+              type: string
+            fps:
+              type: number
+            has_audio:
+              type: boolean
+        usage:
+          type: object
+          properties:
+            total_tokens:
+              type: integer
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+paths:
+  /contents/generations/tasks:
+    post:
+      operationId: createVideoTask
+      summary: 创建视频生成任务
+      description: |
+        创建异步视频生成任务。任务创建后需轮询 GET 接口查询状态，
+        状态为 succeeded 时可从 content.video_url 获取视频链接（24小时有效）。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+            examples:
+              text_to_video:
+                summary: 文生视频示例
+                value:
+                  model: doubao-seedance-2-0-260128
+                  content:
+                    - type: text
+                      text: 一只猫在草地上奔跑，阳光明媚，电影感镜头
+                  ratio: "16:9"
+                  resolution: 720p
+                  duration: 5
+                  generate_audio: true
+              image_to_video:
+                summary: 图生视频示例
+                value:
+                  model: doubao-seedance-2-0-260128
+                  content:
+                    - type: text
+                      text: 镜头缓缓推进
+                    - type: image_url
+                      image_url:
+                        url: https://example.com/image.jpg
+                      role: first_frame
+                  ratio: adaptive
+                  resolution: 720p
+                  duration: 5
+      responses:
+        "200":
+          description: 任务创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+    get:
+      operationId: listVideoTasks
+      summary: 查询任务列表（最近7天）
+      parameters:
+        - name: page_num
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: filter.status
+          in: query
+          description: 按状态筛选
+          schema:
+            type: string
+            enum: [queued, running, succeeded, failed, cancelled, expired]
+      responses:
+        "200":
+          description: 任务列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+
+  /contents/generations/tasks/{task_id}:
+    get:
+      operationId: getVideoTask
+      summary: 查询单个任务状态和结果
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 任务详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+    delete:
+      operationId: cancelVideoTask
+      summary: 取消或删除任务
+      description: |
+        queued 状态：取消排队。succeeded/failed/expired 状态：删除记录。
+        running/cancelled 状态不支持此操作。
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 操作成功
