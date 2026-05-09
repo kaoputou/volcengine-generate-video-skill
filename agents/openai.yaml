@@ -1,0 +1,4 @@
+interface:
+  display_name: "Seedance Video"
+  short_description: "Generate videos with Volcengine Seedance"
+  default_prompt: "Use $volcengine-generate-video to create a Seedance video from my prompt or first-frame image."
