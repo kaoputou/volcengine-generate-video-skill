@@ -11,13 +11,13 @@
 | `scripts/seedance_video.py` | 稳定的命令行入口，负责提交任务、轮询结果、下载视频 |
 | `references/openapi.yaml` | 原始 API 参考，按需读取 |
 
-## 使用方式
+## 如何使用
 
-这个目录现在已经是一个标准 skill 包雏形。
+将以下提示词复制给你的 AI 智能体（Claude Code、Codex、Cursor、Windsurf、GitHub Copilot、OpenClaw（小龙虾）、Trae 等），它会自动完成安装：
 
-- 给 Codex 用：把整个目录安装到 `~/.codex/skills/volcengine-generate-video/`
-- 给其他支持 skill 目录的平台用：优先使用 `SKILL.md`
-- 给需要工具桥接的平台用：使用 `references/openapi.yaml` 再接 MCP / plugin / 自定义 server
+> 请帮我安装生成视频 Skill。
+>
+> 仓库文档：https://github.com/kaoputou/volcengine-generate-video-skill
 
 ## 环境变量
 
