@@ -8,7 +8,7 @@
 |------|------|
 | `SKILL.md` | Codex / OpenAI 风格 skill 入口，包含触发描述和工作流 |
 | `agents/openai.yaml` | skill 列表中的展示文案和默认提示 |
-| `scripts/seedance_video.py` | 稳定的命令行入口，负责提交任务、轮询结果、下载视频 |
+| `scripts/seedance_video.sh` | 稳定的命令行入口，负责提交任务、轮询结果、下载视频 |
 | `references/openapi.yaml` | 原始 API 参考，按需读取 |
 
 ## 如何使用
@@ -28,6 +28,6 @@
 ## 命令示例
 
 ```bash
-python3 scripts/seedance_video.py \
+bash scripts/seedance_video.sh \
   --prompt "A cinematic food commercial shot of noodles steaming on a wooden table"
 ```

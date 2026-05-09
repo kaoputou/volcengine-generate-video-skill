@@ -8,7 +8,7 @@ description: Generate videos with Volcengine Ark Seedance via API, including tex
 ## Overview
 
 Use this skill to create Volcengine Ark Seedance video generation tasks and wait for the final result.
-Prefer the bundled script `scripts/seedance_video.py` over handwritten `curl` commands so the request payload, polling, local image handling, and result formatting stay consistent.
+Prefer the bundled script `scripts/seedance_video.sh` over handwritten `curl` commands so the request payload, polling, local image handling, and result formatting stay consistent.
 
 ## Workflow
 
@@ -47,14 +47,14 @@ Run from the skill directory when convenient.
 Text-to-video:
 
 ```bash
-python3 scripts/seedance_video.py \
+bash scripts/seedance_video.sh \
   --prompt "A cinematic tracking shot of a red fox running through snowy woods at sunrise"
 ```
 
 Image-to-video with a first frame URL:
 
 ```bash
-python3 scripts/seedance_video.py \
+bash scripts/seedance_video.sh \
   --prompt "Slow camera push-in, soft morning light" \
   --first-frame https://example.com/frame.jpg
 ```
@@ -62,7 +62,7 @@ python3 scripts/seedance_video.py \
 Image-to-video with a local file and direct download:
 
 ```bash
-python3 scripts/seedance_video.py \
+bash scripts/seedance_video.sh \
   --prompt "The character turns and smiles at the camera" \
   --first-frame /absolute/path/to/frame.png \
   --download /absolute/path/to/output.mp4
