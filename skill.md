@@ -15,8 +15,10 @@ Prefer the bundled script `scripts/seedance_video.sh` over handwritten `curl` co
 1. Confirm the generation mode:
    - Text-to-video: the user provides a prompt.
    - Image-to-video: the user provides at least one image for `first_frame`, `last_frame`, or `reference_image`; a prompt is optional but usually helpful.
-2. Check `ARK_API_KEY` in the environment.
-   - If missing, ask the user to set it.
+2. Resolve the API key.
+   - The script first reads the key from a local config file in the user's home directory.
+   - If no saved key exists, it prompts the user once and saves the key locally automatically.
+   - `ARK_API_KEY` can still be provided temporarily for one-off runs, but it is no longer required for normal use.
    - The API key comes from the Volcengine Ark console: `https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey`
 3. Collect or confirm the main parameters:
    - `model`
@@ -43,6 +45,7 @@ Prefer the bundled script `scripts/seedance_video.sh` over handwritten `curl` co
 ## Commands
 
 Run from the skill directory when convenient.
+On the first run, the script may prompt for the API key and save it to a local config file.
 
 Text-to-video:
 
@@ -79,6 +82,8 @@ Useful flags:
 - `--watermark`
 - `--download <path>`
 - `--json`
+- `--set-api-key`
+- `--clear-api-key`
 
 ## Output Expectations
 

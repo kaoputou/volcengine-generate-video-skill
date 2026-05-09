@@ -19,15 +19,25 @@
 >
 > 仓库文档：https://github.com/kaoputou/volcengine-generate-video-skill
 
-## 环境变量
+## API Key
 
-| 变量 | 说明 |
-|------|------|
-| `ARK_API_KEY` | 火山引擎方舟 API Key，前往 [控制台](https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey) 获取 |
+默认不需要手动设置环境变量。
+
+- 首次运行脚本时，会提示输入一次火山方舟 API Key
+- 输入后会自动保存到本地配置文件
+- 后续再次运行时会自动读取，不需要再 `export ARK_API_KEY=...`
+- 默认保存位置是 `~/.volcengine-generate-video/ark_api_key`
+- API Key 可在 [控制台](https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey) 获取
 
 ## 命令示例
 
 ```bash
 bash scripts/seedance_video.sh \
   --prompt "A cinematic food commercial shot of noodles steaming on a wooden table"
+```
+
+如果你想提前保存 API Key，也可以先运行：
+
+```bash
+bash scripts/seedance_video.sh --set-api-key
 ```

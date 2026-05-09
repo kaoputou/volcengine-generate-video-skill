@@ -3,6 +3,8 @@ set -euo pipefail
 
 API_BASE="https://ark.cn-beijing.volces.com/api/v3"
 CREATE_PATH="/contents/generations/tasks"
+CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.volcengine-generate-video}"
+API_KEY_FILE="${CONFIG_DIR}/ark_api_key"
 MODEL="doubao-seedance-2-0-260128"
 RATIO=""
 RESOLUTION="720p"
@@ -42,6 +44,8 @@ options:
   --timeout SECONDS             Max wait time. Default: 1800
   --download PATH               Download the final video to PATH
   --json                        Print final result as JSON
+  --set-api-key                 Prompt for API Key and save it to a local config file
+  --clear-api-key               Remove the saved API Key from the local config file
   -h, --help                    Show this help
 EOF
 }
@@ -49,6 +53,63 @@ EOF
 die() {
   echo "$*" >&2
   exit 1
+}
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
+}
+
+ensure_config_dir() {
+  mkdir -p "$CONFIG_DIR"
+}
+
+get_key_from_file() {
+  if [[ -f "$API_KEY_FILE" ]]; then
+    tr -d '\r\n' <"$API_KEY_FILE"
+  fi
+}
+
+save_key_to_file() {
+  local api_key="$1"
+  ensure_config_dir
+  printf '%s\n' "$api_key" >"$API_KEY_FILE"
+  chmod 600 "$API_KEY_FILE" 2>/dev/null || true
+}
+
+delete_key_from_file() {
+  rm -f "$API_KEY_FILE"
+}
+
+prompt_for_api_key() {
+  local api_key=""
+  if [[ ! -t 0 ]]; then
+    die "API Key not found in the local config file, and no interactive terminal is available. Run this command in Terminal once to save your key."
+  fi
+
+  echo "首次使用需要输入一次火山方舟 API Key，脚本会自动保存到本地配置文件。" >&2
+  printf '请输入 ARK API Key: ' >&2
+  IFS= read -r -s api_key
+  echo >&2
+  [[ -n "$api_key" ]] || die "API Key cannot be empty."
+  save_key_to_file "$api_key"
+  echo "已保存到本地配置文件，后续无需再次输入。" >&2
+  printf '%s' "$api_key"
+}
+
+ensure_api_key() {
+  if [[ -n "${ARK_API_KEY:-}" ]]; then
+    export ARK_API_KEY
+    return 0
+  fi
+
+  ARK_API_KEY="$(get_key_from_file)"
+  if [[ -n "$ARK_API_KEY" ]]; then
+    export ARK_API_KEY
+    return 0
+  fi
+
+  ARK_API_KEY="$(prompt_for_api_key)"
+  export ARK_API_KEY
 }
 
 json_escape() {
@@ -338,6 +399,15 @@ while [[ $# -gt 0 ]]; do
       OUTPUT_JSON="true"
       shift
       ;;
+    --set-api-key)
+      prompt_for_api_key >/dev/null
+      exit 0
+      ;;
+    --clear-api-key)
+      delete_key_from_file
+      echo "已清除本地配置文件中保存的 API Key。"
+      exit 0
+      ;;
     -h|--help)
       usage
       exit 0
@@ -348,7 +418,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "${ARK_API_KEY:-}" ]] || die "ARK_API_KEY is not set."
+require_command curl
+require_command plutil
+require_command base64
+require_command file
+
+ensure_api_key
 
 payload="$(build_payload)"
 created="$(api_request "POST" "${CREATE_PATH}" "$payload")"
